@@ -1,0 +1,36 @@
+name: pr validation
+on: [pull_request]
+jobs:
+  linter_name:
+    name: black formatter
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: rickstaa/action-black@v1
+        with:
+          black_args: ". --check"
+  test:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    - name: Ensure browsers are installed
+      run: python -m playwright install --with-deps
+    - name: Run your tests
+      run: pytest --TWITTER_USER_NAME="${{ secrets.TWITTER_USER_NAME }}" --TWITTER_PASSWORD="${{ secrets.TWITTER_PASSWORD }}"
+    - name: Archive production artifacts
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: reports
+        path: |
+          reports
+          !reports/.git*

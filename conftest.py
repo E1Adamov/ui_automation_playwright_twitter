@@ -1,4 +1,5 @@
 import os
+import time
 from urllib.parse import urljoin
 
 import pytest
@@ -58,7 +59,7 @@ def login_and_save_state(request: pytest.FixtureRequest, browser: Browser) -> st
     yield state_storage_path
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def home_page(
     request: pytest.FixtureRequest,
     browser: Browser,
@@ -77,10 +78,16 @@ def home_page(
     home_page.wait_to_open()
 
     yield home_page
+    if request.session.testsfailed:
+        screenshot_path = os.path.join(
+            ROOT_PATH, "reports", f"{time.time()}_screenshot.png"
+        )
+        page.screenshot(path=screenshot_path, full_page=True)
+
     page.close()
 
 
-@pytest.fixture()
+@pytest.fixture
 def tweets(
     request: pytest.FixtureRequest,
     home_page: HomePage,
