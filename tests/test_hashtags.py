@@ -11,10 +11,10 @@ logger = logging.getLogger(__name__)
 
 
 @pytest.mark.get_tweets(author="google", count=100)
-def test_google_hash_tags(home_page: HomePage, tweets: list[Tweet]):
+def test_google_hash_tags(home_page: HomePage, cacheable_tweets: list[Tweet]):
     total_hash_tags_count = 0
     each_hash_tag_count: DefaultDict[str, int] = defaultdict(int)
-    for tweet in tweets:
+    for tweet in cacheable_tweets:
         for hash_tag in tweet.hash_tags:
             total_hash_tags_count += 1
             each_hash_tag_count[hash_tag] += 1

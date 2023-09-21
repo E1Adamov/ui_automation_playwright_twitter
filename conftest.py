@@ -14,6 +14,9 @@ from core.pages.login_page import LoginPage
 from root import ROOT_PATH
 
 
+tweets_cache = {}
+
+
 def pytest_addoption(parser: Parser):
     parser.addoption("--env", required=True, help="Base URL")
     parser.addoption(
@@ -88,13 +91,17 @@ def home_page(
 
 
 @pytest.fixture
-def tweets(
+def cacheable_tweets(
     request: pytest.FixtureRequest,
     home_page: HomePage,
 ) -> list[Tweet]:
     marker = request.node.get_closest_marker("get_tweets")
     author = marker.kwargs["author"]
     count = marker.kwargs["count"]
+
+    cache_key = (author, count)
+    if cache_key in tweets_cache:
+        return tweets_cache[cache_key]
 
     env_url = request.config.option.env
     author_page_url = urljoin(env_url, author)
@@ -104,5 +111,7 @@ def tweets(
     tweets: list[Tweet] = author_tweet_page.tweet_component.get_tweets(
         count=count, timeout=120
     )
+
+    tweets_cache[cache_key] = tweets
 
     return tweets
