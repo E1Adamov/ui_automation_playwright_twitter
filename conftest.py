@@ -1,3 +1,4 @@
+import logging
 import os
 import time
 from urllib.parse import urljoin
@@ -5,13 +6,16 @@ from urllib.parse import urljoin
 import pytest
 from _pytest.config.argparsing import Parser
 from playwright.sync_api import Browser
+from playwright._impl._api_types import TimeoutError as PlaywrightTimeoutError
 
 from core.components.tweet_component import Tweet
 from core.pages.author_tweet_page import AuthorTweetsPage
+from core.pages.confirmation_code_page import ConfirmationCodePage
 from core.pages.enter_password_page import EnterPasswordPage
 from core.pages.home_page import HomePage
 from core.pages.login_page import LoginPage
 from root import ROOT_PATH
+from core.helpers import gmail
 
 
 tweets_cache = {}
@@ -19,16 +23,10 @@ tweets_cache = {}
 
 def pytest_addoption(parser: Parser):
     parser.addoption("--env", required=True, help="Base URL")
-    parser.addoption(
-        "--TWITTER_USER_NAME",
-        required=True,
-        help='Example: --TWITTER_USER_NAME="@myUserName"',
-    )
-    parser.addoption(
-        "--TWITTER_PASSWORD",
-        required=True,
-        help='Example: --TWITTER_PASSWORD="mysecretpassword"',
-    )
+    parser.addoption("--TWITTER_USER_NAME", required=True)
+    parser.addoption("--TWITTER_PASSWORD", required=True)
+    parser.addoption("--GMAIL_USER_NAME")
+    parser.addoption("--GMAIL_PASSWORD")
     parser.addoption("--screen_width", required=True, type=int)
     parser.addoption("--screen_height", required=True, type=int)
 
@@ -52,6 +50,22 @@ def login_and_save_state(request: pytest.FixtureRequest, browser: Browser) -> st
     enter_password_page.locators.input_password().fill(password)
     enter_password_page.locators.button_log_in().click()
 
+    confirmation_code_page = ConfirmationCodePage(page=page)
+    try:
+        confirmation_code_page.wait_to_open(timeout=10000)
+    except PlaywrightTimeoutError:
+        pass
+    else:
+        gmail_user_name = request.config.option.GMAIL_USER_NAME
+        gmail_password = request.config.option.GMAIL_PASSWORD
+        confirmation_code = gmail.get_confirmation_code(
+            email=gmail_user_name, password=gmail_password
+        )
+        confirmation_code_page.locators.input_confirmation_code().fill(
+            confirmation_code
+        )
+        confirmation_code_page.locators.button_next().click()
+
     home_page = HomePage(page=page)
     home_page.wait_to_open()
 
@@ -68,7 +82,10 @@ def home_page(
     browser: Browser,
     login_and_save_state: str,
 ) -> HomePage:
-    context = browser.new_context(storage_state=login_and_save_state)
+    context = browser.new_context(
+        storage_state=login_and_save_state,
+        record_video_dir=os.path.join(ROOT_PATH, "reports"),
+    )
     page = context.new_page()
 
     width = request.config.option.screen_width
@@ -79,13 +96,7 @@ def home_page(
     page.goto(env_url)
     home_page = HomePage(page=page)
     home_page.wait_to_open()
-
     yield home_page
-    if request.session.testsfailed:
-        screenshot_path = os.path.join(
-            ROOT_PATH, "reports", f"{time.time()}_screenshot.png"
-        )
-        page.screenshot(path=screenshot_path, full_page=True)
 
     page.close()
 

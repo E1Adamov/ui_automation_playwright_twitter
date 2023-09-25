@@ -30,12 +30,12 @@ class Tweet(BaseUiObject):
             locator=locator,
         )
         self.mentions: list[str] = self.get_mentions()
-        self.hash_tags: list[str] = self.get_hash_tags()
+        self.hashtags: list[str] = self.get_hashtags()
 
     def get_mentions(self) -> list[str]:
         return self._get_internal_elements(locator=self.locators.mention())
 
-    def get_hash_tags(self) -> list[str]:
+    def get_hashtags(self) -> list[str]:
         return self._get_internal_elements(locator=self.locators.hash_tag())
 
     @staticmethod

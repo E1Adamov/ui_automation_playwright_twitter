@@ -1,4 +1,4 @@
-name: pr validation
+name: PR VALIDATION
 on: [pull_request]
 jobs:
   linter_name:
@@ -10,6 +10,7 @@ jobs:
         with:
           black_args: ". --check"
   test:
+    name: playwright tests
     timeout-minutes: 60
     runs-on: ubuntu-latest
     steps:
@@ -24,9 +25,9 @@ jobs:
         pip install -r requirements.txt
     - name: Ensure browsers are installed
       run: python -m playwright install --with-deps
-    - name: Run your tests
-      run: pytest --TWITTER_USER_NAME="${{ secrets.TWITTER_USER_NAME }}" --TWITTER_PASSWORD="${{ secrets.TWITTER_PASSWORD }}"
-    - name: Archive production artifacts
+    - name: Run playwright tests
+      run: pytest --TWITTER_USER_NAME="${{ secrets.TWITTER_USER_NAME }}" --TWITTER_PASSWORD="${{ secrets.TWITTER_PASSWORD }}" --GMAIL_USER_NAME="${{ secrets.GMAIL_USER_NAME }}" --GMAIL_PASSWORD="${{ secrets.GMAIL_PASSWORD }}"
+    - name: Archive test artifacts
       if: always()
       uses: actions/upload-artifact@v3
       with:
