@@ -1,6 +1,14 @@
 # Description
 The framework is based on the pytest + playwright
 
+# Features
+- Page Object Model
+- Separate classes for Pages, Page Components, and UI Objects
+- Reusable authentication
+- html reports with screenshot, video and Playwright "trace" for failed tests
+- Junit reports
+- Github Actions workflow
+
 # Installation
 1. [download](https://www.python.org/downloads/release/python-3113/) and install Python 3.11.3
 2. clone the framework
